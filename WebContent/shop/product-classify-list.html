@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>欢迎页面-X-admin2.0</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="shortcut icon" href="/xgg/favicon.ico" type="image/x-icon"/>
+    <link rel="stylesheet" href="./css/font.css">
+    <link rel="stylesheet" href="./css/xadmin.css">
+    <script type="text/javascript" src="./lib/jquery/jquery-3.3.1.js"></script>
+    <script type="text/javascript" src="./lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="./js/xadmin.js"></script>
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <style>
+        .layui-table-cell {
+            height: auto;
+            line-height: 28px;
+        }
+
+        .layui-table img {
+            max-width: 100px;
+        }
+    </style>
+</head>
+<body class="layui-anim layui-anim-up">
+<div class="x-nav">
+		<span class="layui-breadcrumb">
+			<a href="">首页</a>
+			<a href="">商品分类管理</a>
+			<a>
+				<cite>商品分类列表</cite>
+			</a>
+
+		</span>
+    <a class="layui-btn layui-btn-small" style="line-height:1.6em;margin-top:3px;float:right"
+       href="javascript:location.replace(location.href);" title="刷新"> <i class="layui-icon"
+                                                                         style="line-height:30px">ဂ</i>
+    </a>
+</div>
+<div class="x-body" style="padding:0px; margin-bottom:0px;">
+    <div class="layui-row">
+        <form class="layui-form layui-col-md12 x-so" style="padding:0px; margin-bottom:0px;margin-top:10px;">
+            <div class="layui-inline">
+                <select name="findBy" lay-verify="required" lay-filter="findBy" id="findBy">
+                    <option value="pc_id">通过Id查询</option>
+                    <option value="pc_name" selected>通过分类名查询</option>
+                </select>
+            </div>
+            <input type="text" name="findInput" id="findInput" placeholder="请输入分类名" autocomplete="off"
+                   class="layui-input" data-type="reload">
+            <button class="layui-btn" lay-submit lay-filter="sreach"><i class="layui-icon">&#xe615;</i>
+            </button>
+
+        </form>
+    </div>
+</div>
+<table class="layui-table layui-hide" id="productClassify" style="margin-top:0" lay-filter="productClassify"></table>
+<script type="text/html" id="toolbar">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-danger" lay-event="deleteAll"><i class="layui-icon"></i>批量删除</button>
+        <button class="layui-btn" lay-event="add"><i class="layui-icon"></i>添加</button>
+    </div>
+</script>
+<script type="text/html" id="bar">
+    <a lay-event="edit"><i class="layui-icon" style="font-size:20px">&#xe631;</i></a>
+    <a lay-event="del"><i class="layui-icon" style="font-size:20px">&#xe640;</i></a>
+</script>
+<script>
+    $(function () {
+        var shop = layui.sessionData('shop').data;
+
+        console.log('shop:' + JSON.stringify(shop));
+        console.log(" and pc_shop_id =" + shop.shop_id);
+        var layerHeight = 50;
+        layui.use(['table', 'form'], function () {
+                var table = layui.table,
+                    form = layui.form;
+
+                table.render({
+                    elem: '#productClassify',
+                    url: '/xgg/ProductClassifyFind',
+                    method: 'post',
+                    parseData: function (res) { //res 即为原始返回的数据
+                        console.log("总条数：", res.total);
+                        layui.sessionData("productClassifyTotal", {      //存储总条数
+                            key: "data",
+                            value: res.total
+                        });
+                        layui.sessionData("pageInfo", {
+                            key: "curr",
+                            value: res.page,
+                            key: "total",
+                            value: res.total,
+                            key: "limit",
+                            value: res.limit
+                        });
+                        console.log("curr:", res.page);
+                        console.log("limit:", res.limit);
+                        console.log("total:", res.total);
+                        return {
+                            "code": res.success ? 0 : 1, //解析接口状态
+                            "msg": res.msg, //解析提示文本
+                            "count": res.total, //解析数据长度
+                            "data": res.data //解析数据列表
+                        }
+                    },
+                    where: {
+                        condition: "and pc_shop_id =" + shop.shop_id + " order by pc_sort asc"
+                    },
+                    toolbar: '#toolbar',
+                    title: '商品数据表',
+                    cols: [[
+                        {type: 'checkbox'},
+                        {field: 'pc_id', title: 'ID', unresize: true, sort: true},
+                        {field: 'pc_sort', title: '排序', unresize: true, sort: true, hide: 'true'},
+                        {field: 'pc_sort_show', title: '排序', unresize: true, sort: true},
+                        {field: 'pc_shop_id', title: '商家id', hide: 'true'},
+                        {
+                            field: 'pc_name', title: '分类名', edit: 'text',
+                        },
+                        {title: '操作', toolbar: '#bar', width: 80}
+                    ]],
+                    id: 'table_productClassify',
+                    page: true
+                });
+
+
+                //搜索选择框
+                form.on('select(findBy)', function (data) {
+                    switch (data.value) {
+                        case "pc_id":
+                            $("#findInput").attr('placeholder', "请输入id");
+                            break;
+                        case "pc_name":
+                            $("#findInput").attr('placeholder', "请输入分类名");
+                            break;
+                    }
+                });
+                //执行重载
+                form.on('submit(sreach)', function (data) {
+                    var findBy = data.field.findBy;
+                    var findInput = data.field.findInput;
+                    console.log('findBy:' + findBy);
+                    console.log('findInput:' + findInput);
+                    console.log("点击搜索");
+                    table.reload('table_productClassify', {
+                        page: {
+                            curr: 1 //重新从第 1 页开始
+                        }
+                        , where: {
+                            condition: function () {
+                                var condition;
+                                switch (findBy) {
+                                    case "pc_id":
+
+                                        condition = " and " + findBy + "=" + findInput;
+                                        console.log(condition);
+                                        break;
+                                    case "pc_name":
+                                        condition = " and " + findBy + " like " + "\'%" + findInput + "%\'";
+                                        console.log(condition);
+                                }
+                                condition += " and pc_shop_id=" + shop.shop_id;
+                                console.log("重载:" + condition);
+                                return condition;
+                            }
+                        }
+                    });
+                    return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+                });
+
+                //监听工具条
+                table.on('tool(productClassify)', function (obj) { //注：tool是工具条事件名，test是table原始容器的属性 lay-filter="对应的值"
+                    var data = obj.data;                     //获得当前行数据
+                    var layEvent = obj.event;                //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+                    var tr = obj.tr;                         //获得当前行 tr 的DOM对象
+                    var pc_id = "pc_id=" + data.pc_id; //获取当前数据行id，用于删除
+                    console.log("productClassify_list:" + JSON.stringify(obj.data));
+                    console.log("session:" + JSON.stringify(layui.sessionData("productClassify").data));
+                    layui.sessionData("productClassify", {key: "data", value: data}); //将当前行数据封装到会话对象中
+                    console.log("session:" + JSON.stringify(layui.sessionData("productClassify").data));
+                    if (layEvent === 'detail') { //查看
+                        //do somehing
+                    } else if (layEvent === 'del') { //删除
+                        var newHeight = layerHeight + 25;
+                        console.log("newHeight:" + newHeight);
+                        layer.open({
+                            content: '真的删除行么？',
+                            offset: newHeight + "px",
+                            yes: function (index, layero) {
+                                //do something
+                                obj.del();
+                                layer.close(index); //如果设定了yes回调，需进行手工关闭
+                                //向服务端发送删除指令
+                                $.ajax({
+                                    type: "POST",
+                                    url: "/xgg/ProductClassifyDelete",
+                                    data: {"pc_id": data.pc_id},
+                                    success: function (data, status) {		//请求成功后回调
+                                        var msg = JSON.parse(data);
+                                        if (msg.success) {					//删除成功操作
+                                            console.log("删除成功！");
+                                        }
+                                    }
+                                });
+                            }
+                        });
+
+                    } else if (layEvent === 'edit') { //编辑
+                        var newHeight = layerHeight + 25;
+                        console.log("newHeight:" + newHeight);
+
+                        layer.open({		//打开编辑页面
+                            type: 2,
+                            offset: newHeight + "px",
+                            area: ['600px', '400px'],
+                            fix: false, //不固定
+                            maxmin: true,
+                            shadeClose: false,
+                            shade: 0.4,
+                            title: '编辑',
+                            content: 'product-classify-edit.html',
+                            end: function () {
+                                var productClassify = layui.sessionData('productClassify');	//获取修改后的数据
+                                console.log(JSON.stringify(productClassify.data));
+
+
+                                //重载当前表格
+                                reload();
+                            }
+                        });
+                    }
+                });
+
+                //监听事件
+                table.on('toolbar(productClassify)', function (obj) {
+                    var checkStatus = table.checkStatus(obj.config.id);
+                    switch (obj.event) {
+                        case 'add':     //添加商品
+
+                            layer.open({		//打开添加页面
+                                type: 2,
+
+                                area: ['600px', '400px'],
+                                fix: false, //不固定
+                                maxmin: true,
+                                shadeClose: false,
+                                shade: 0.4,
+                                title: '添加',
+                                content: 'product-classify-add.html',
+                                cancel: function (index, layero) {
+                                    layui.sessionData("productClassifyAdd", null);
+                                },
+                                end: function () {
+                                    var productClassify = layui.sessionData('productClassifyAdd');	//获取修改后的数据
+                                    console.log("productClassifyAdd:" + JSON.stringify(productClassify));
+                                    if ($.isEmptyObject(productClassify)) {
+                                        console.log("stop");
+                                        return;
+                                    }
+                                    layer.msg('添加成功', {
+                                        icon: 1,
+                                        time: 2000 //2秒关闭（如果不配置，默认是3秒）
+                                    });
+                                    table.reload('table_productClassify', {
+                                        page: {
+                                            curr: 1     //当前页码
+                                        }
+                                        , where: {
+                                            condition: function () {
+                                                var productClassify = layui.sessionData('productClassifyAdd');	//获取增加后的数据
+                                                var pc_id = productClassify.data.pc_id;
+                                                var condition = " and pc_id=" + pc_id;
+                                                console.log("新增商品condition：" + condition);
+                                                return condition;
+                                            }
+                                        }
+                                    });
+
+                                }
+                            });
+
+                            break;
+                        case 'deleteAll':
+                            var index = layer.load();   //显示加载中
+                            var data = checkStatus.data;
+                            var pc_id = new Array();
+                            var pc_head = new Array();
+                            for (var i in data) {
+                                pc_id.push(data[i].pc_id);
+                                if (data[i].pord_head != "" && data[i].pc_head != null) {
+
+                                    pc_head.push(data[i].pc_head.replace(QINIU_DOMAIN, ""));
+                                    console.log(data[i].pc_head);
+                                }
+                            }
+                            console.log("obj:" + JSON.stringify(obj));
+                            console.log("obj:" + JSON.stringify(checkStatus));
+                            console.log("obj:" + Object.keys(checkStatus));
+                            console.log("");
+                            console.log(pc_head);
+                            console.log(pc_id);
+                            console.log(JSON.stringify(pc_head));
+                            console.log(JSON.stringify(pc_id));
+
+                            var newpc_id = JSON.stringify(pc_id).replace("[", "(").replace("]", ")");
+                            console.log("newpc_id:" + newpc_id);
+
+                            //向服务端发送删除指令
+                            $.ajax({
+                                type: "POST",
+                                url: "/xgg/ProductClassifyQuickBatchDelete",
+                                data: {
+                                    "pc_id": newpc_id,
+                                    "pc_head": JSON.stringify(pc_head)
+                                },
+                                success: function (data, status) {		//请求成功后回调
+                                    var msg = JSON.parse(data);
+                                    console.log(data);
+                                    var curr = obj.config.page.curr;
+                                    var count = obj.config.page.count;
+                                    var limit = obj.config.page.limit;
+                                    var pages = obj.config.page.pages;
+                                    var delCount = checkStatus.data.length;
+                                    console.log("curr:" + curr);
+                                    console.log("count:" + count);
+                                    console.log("limit:" + limit);
+                                    console.log("pages:" + pages);
+                                    console.log("delCount:" + delCount);
+                                    var newCount = count - delCount;
+                                    var newPages = Math.ceil(newCount / limit);
+                                    console.log("curr:" + curr);
+                                    console.log("newPages:" + newPages);
+
+                                    var newCurr;
+                                    if (curr == 1) {
+                                        newCurr = 1;
+                                    } else if (curr == pages) {
+                                        if (delCount < count - (pages - 1) * limit) {
+                                            newCurr = pages;
+                                        } else {
+                                            newCurr = pages - 1;
+                                        }
+                                    } else {
+                                        newCurr = curr;
+                                    }
+                                    console.log("最终当前页：" + newCurr);
+
+
+                                    if (msg.success) {					//删除成功操作
+                                        console.log("删除成功！");
+                                        table.reload('table_productClassify', {
+                                            page: {
+                                                curr: newCurr
+                                            }
+
+                                        });
+                                        layer.close(index);
+                                    }
+                                }
+                            });
+                            break;
+
+                    }
+
+                });
+
+
+                function reload() {
+                    var pageInfo = layui.sessionData("pageInfo");
+                    console.log("pageInfo:" + JSON.stringify(pageInfo));
+                    var curr = pageInfo.curr;           //当前页码
+
+
+                    console.log("curr:" + curr);
+
+
+                    table.reload('table_productClassify', {
+                        page: {
+                            curr: curr
+                        }
+
+                    });
+
+
+                }
+            }
+        );
+
+
+        $(document).scroll(function () { //页面加载时，获取滚动条初始高度
+            layerHeight = $(document).scrollTop() + 50; //获取滚动条初始高度的值 ：0
+            console.log("layerHeight:" + layerHeight);
+        });
+
+
+    });
+</script>
+</body>
+
+</html>

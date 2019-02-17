@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>商品添加</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="shortcut icon" href="/xgg/favicon.ico" type="image/x-icon"/>
+    <link rel="stylesheet" href="./css/font.css">
+    <link rel="stylesheet" href="./css/xadmin.css">
+    <script type="text/javascript" src="./lib/jquery/jquery-3.3.1.js"></script>
+    <script type="text/javascript" src="./lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="./js/xadmin.js"></script>
+    <script type="text/javascript" src="./js/xcity.js"></script>
+
+    <script src="./lib/qiniu/moxie.js"></script>
+    <script src="./lib/qiniu/plupload.min.js"></script>
+    <script src="./lib/qiniu/qiniu.js"></script>
+    <!-- <script src="./lib/qiniu/plupload.full.min.js"></script> -->
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+<div class="x-body">
+    <form class="layui-form" lay-filter="product">
+
+
+        <div class="layui-form-item">
+            <label for="prod_name" class="layui-form-label">
+                <span class="x-red">*</span>商品名
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="prod_name" name="prod_name" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label for="prod_price" class="layui-form-label">
+                <span class="x-red">*</span>价格
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="prod_price" name="prod_price" autocomplete="off" class="layui-input">
+            </div>
+            <div class="layui-form-mid layui-word-aux">
+                单位：元
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label for="prod_head" class="layui-form-label">
+                <span class="x-red">*</span>商品图片
+            </label>
+            <div class="layui-input-inline layui-hide">
+                <input type="text" id="prod_head" name="prod_head" autocomplete="off" class="layui-input">
+            </div>
+            <button type="button" class="layui-btn" id="uploadHead">
+                <i class="layui-icon">&#xe67c;</i>上传图片
+            </button>
+
+        </div>
+        <div class="layui-form-item" id="uploadImgtest">
+            <label class="layui-form-label">缩略图
+            </label>
+            <img id="uploadImg" height="80px" src="">
+            <input class="layui-hide" id="isUpload" value="false"/>
+        </div>
+        <div class="layui-form-item">
+            <label for="productRegist" class="layui-form-label">
+            </label>
+            <button id="productRegist" class="layui-btn" lay-filter="add" lay-submit="">
+                增加
+            </button>
+        </div>
+    </form>
+</div>
+<script>
+    $(function () {
+        var shop = layui.sessionData("shop").data;    //商家信息
+        var productData;    //全局商品数据
+        var loadIndex;       //加载，用于开始和关闭加载动画
+        var imgKey;          //用于删除七牛云上的图片
+        layui.use(['form', 'layer', 'laydate'], function () {
+            form = layui.form;
+            var layer = layui.layer;
+            var laydate = layui.laydate;
+
+            laydate.render({
+                elem: '#prod_birthday'
+            });
+
+
+
+            //监听提交
+            form.on('submit(add)', function (data) {
+
+                loadIndex = layer.load();   //显示加载中
+                imgKey = $("#prod_head").val();
+                console.log("keyOld: " + imgKey);
+                productData = data.field; //全局用于数据赋值
+
+                if ($("#isUpload").val() == "true") {  //如果有已选择图片文件，则上传key更新头像
+                    uploader.start();     //开始上传图片到七牛云
+                }else{
+                    productAdd(productData);
+                }
+                return false;              //取消表单跳转
+            });
+
+            //提交数据到后台，更新数据
+            function productAdd(productData) {
+
+                var product = productData;
+                var keyNew = $("#prod_head").val();
+                console.log("keyNew: " + keyNew);
+                console.log('BEFORE:'+JSON.stringify(product));
+                product.prod_head = $('#prod_head').val();
+                product.prod_shop_id = shop.shop_id;
+
+                console.log("剔除前："+JSON.stringify(product));
+                //去除data中的空属性即""
+                for(prop in product){
+                    if (product[prop]==='') {
+                        delete product[prop];
+                    }
+                }
+                console.log("剔除后："+JSON.stringify(product));
+
+                console.log('AFTER:'+JSON.stringify(product));
+                var paras = "paras=" + JSON.stringify(product);
+                console.log("paras: " + paras);
+                paras = paras.replace(new RegExp("\"\"",'g'),"");
+
+                console.log("after replace:"+paras);
+                //发异步，把数据提交给数据库
+                $.ajax({
+                    type: "POST",
+                    url: "/xgg/ProductAdd",
+                    data: paras,
+                    success: function (data, status) {		//请求成功后回调
+                        console.log("新增商品请求成功！");
+                        var msg = JSON.parse(data);
+                        if (msg.success) {					//添加成功操作
+                            console.log("新增商品成功！");
+                            layui.sessionData("productAdd", {key: "data", value: msg.data[0]}); //将当前行数据封装到会话对象中
+                            layer.close(loadIndex);
+                            var index = parent.layer.getFrameIndex(window.name);
+                            parent.layer.close(index);
+
+                        }
+                    }
+                });
+
+            }
+
+            var uploader = Qiniu.uploader({
+                disable_statistics_report: false,              // 禁止自动发送上传统计信息到七牛，默认允许发送
+                runtimes: 'html5,flash,html4',                 // 上传模式，依次退化
+                browse_button: 'uploadHead',                   // 上传选择的点选按钮，必需
+                // container: 'container',                        // 上传区域DOM ID，默认是browser_button的父元素
+                max_file_size: '100mb',                        // 最大文件体积限制
+                flash_swf_url: './lib/qiniu/Moxie.swf',        // 引入flash，相对路径
+                dragdrop: false,                               // 关闭可拖曳上传
+                chunk_size: '4mb',                             // 分块上传时，每块的体积
+                multi_selection: !(moxie.core.utils.Env.OS.toLowerCase() === "ios"),
+                uptoken_url: '/xgg/GetUptoken',                            // 在初始化时，uptoken，uptoken_url，uptoken_func三个参数中必须有一个被设置,uptoken是上传凭证，由其他程序生成;uptoken_url是提供了获取上传凭证的地址，如果需要定制获取uptoken的过程则可以设置uptoken_func;其优先级为uptoken > uptoken_url > uptoken_func
+                domain: QINIU_DOMAIN,   // bucket域名，下载资源时用到，必需
+                get_new_uptoken: true,                         // 设置上传文件的时候是否每次都重新获取新的uptoken
+                auto_start: false,                              // 选择文件后自动上传，若关闭需要自己绑定事件触发上传
+                max_retries: 3,                                // 上传失败最大重试次数
+                //save_key: true,
+                /* resize: {                                      // 想限制上传图片尺寸，直接用resize这个属性
+                    width: 300,
+                    height: 300
+                }, */
+                init: {
+                    'FilesAdded': function (up, files) {        // 文件添加进队列后，处理相关的事情
+                        plupload.each(files, function (file) {
+                            previewImage(file, function (imgurl) {
+                                console.log(imgurl);
+
+                                $('#uploadImg').attr("src", imgurl);
+                                $('#isUpload').val("true");
+                            });
+                        });
+                    },
+                    'BeforeUpload': function (up, file) {       // 每个文件上传前，处理相关的事情
+                        console.log("开始上传之前");
+                        //$(".upload-progress").show();
+                    },
+                    'UploadProgress': function (up, file) {     // 每个文件上传时，处理相关的事情
+                        console.log("上传中");
+                        //$(".upload-progress").html("上传进度:"+file.percent + "%");
+                    },
+                    'FileUploaded': function (up, file, info) {  // 每个文件上传成功后，处理相关的事情
+                        console.log("上传成功");
+                        //$(".upload-progress").hide();
+                        var domain = up.getOption('domain');
+                        var res = JSON.parse(info.response);
+                        var src = domain + res.key;
+
+                        productAdd(productData)
+                    },
+                    'Error': function (up, err, errTip) {
+                        console.log("上传出错")
+                    },
+                    'UploadComplete': function () {
+                        //队列文件处理完毕后，处理相关的事情
+                    },
+                    'Key': function (up, file) {
+                        // 若想在前端对每个文件的key进行个性化处理，可以配置该函数
+                        // 该配置必须要在 unique_names: false , save_key: false 时才生效
+
+                        var key = "image_" + createImgKey() + ".png";
+                        $('#prod_head').val(QINIU_DOMAIN + key);
+                        console.log("域名：" + QINIU_DOMAIN);
+                        console.log($('#prod_head').val());
+                        // do something with key here
+                        return key;
+                    }
+                }
+            });
+
+
+        });
+
+
+
+
+
+        function previewImage(file, callback) {//file为plupload事件监听函数参数中的file对象,callback为预览图片准备完成的回调函数
+            if (!file || !/image\//.test(file.type)) return; //确保文件是图片
+            if (file.type == 'image/gif') {//gif使用FileReader进行预览,因为mOxie.Image只支持jpg和png
+                var fr = new mOxie.FileReader();
+                fr.onload = function () {
+                    callback(fr.result);
+                    fr.destroy();
+                    fr = null;
+                }
+                fr.readAsDataURL(file.getSource());
+            } else {
+                var preloader = new moxie.image.Image();
+                preloader.onload = function () {
+                    //preloader.downsize( 100, 30 );//先压缩一下要预览的图片,宽300，高300
+                    var imgsrc = preloader.type == 'image/jpeg' ? preloader.getAsDataURL('image/jpeg', 80) : preloader.getAsDataURL(); //得到图片src,实质为一个base64编码的数据
+                    callback && callback(imgsrc); //callback传入的参数为预览图片的url
+                    preloader.destroy();
+                    preloader = null;
+                };
+                preloader.load(file.getSource());
+            }
+        }
+
+    });
+
+</script>
+
+</body>
+
+</html>

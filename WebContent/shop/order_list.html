@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>欢迎页面-X-admin2.0</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="shortcut icon" href="/xgg/favicon.ico" type="image/x-icon"/>
+    <link rel="stylesheet" href="./css/font.css">
+    <link rel="stylesheet" href="./css/xadmin.css">
+    <script type="text/javascript" src="./lib/jquery/jquery-3.3.1.js"></script>
+    <script type="text/javascript" src="./lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="./js/xadmin.js"></script>
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <style>
+        .layui-table-cell {
+            height: auto;
+            line-height: 28px;
+        }
+
+        .layui-table img {
+            max-width: 100px;
+        }
+    </style>
+</head>
+<body class="layui-anim layui-anim-up">
+<div class="x-nav">
+		<span class="layui-breadcrumb">
+			<a href="">首页</a>
+			<a href="">订单管理</a>
+			<a>
+				<cite>订单列表</cite>
+			</a>
+
+		</span>
+    <a class="layui-btn layui-btn-small" style="line-height:1.6em;margin-top:3px;float:right"
+       href="javascript:location.replace(location.href);" title="刷新"> <i class="layui-icon"
+                                                                         style="line-height:30px">ဂ</i>
+    </a>
+</div>
+<div class="x-body" style="padding:0px; margin-bottom:0px;">
+    <div class="layui-row">
+        <form class="layui-form layui-col-md12 x-so" style="padding:0px; margin-bottom:0px;margin-top:10px;">
+            <input class="layui-input" placeholder="开始日" name="start" id="start-date" autocomplete="off">
+            <input class="layui-input" placeholder="截止日" name="end" id="end-date" autocomplete="off">
+            <div class="layui-input-inline">
+                <select name="contrller" lay-filter="contrller" id="contrller">
+                    <option value="">订单状态</option>
+                    <option value="0">待确认</option>
+                    <option value="1">已确认</option>
+                    <!--<option value="2">已收货</option>-->
+                    <!--<option value="3">已取消</option>-->
+                    <option value="2">已完成</option>
+                    <!--<option value="5">已作废</option>-->
+                </select>
+            </div>
+            <div class="layui-inline">
+                <select name="findBy" lay-verify="required" lay-filter="findBy" id="findBy">
+                    <option value="orde_id">通过Id查询</option>
+                    <option value="orde_number" selected>通过订单号查询</option>
+                </select>
+            </div>
+            <input type="text" name="findInput" id="findInput" placeholder="请输入订单号" autocomplete="off"
+                   class="layui-input" data-type="reload">
+            <button class="layui-btn" lay-submit lay-filter="sreach"><i class="layui-icon">&#xe615;</i>
+            </button>
+
+        </form>
+    </div>
+</div>
+<table class="layui-table layui-hide" id="order" style="margin-top:0" lay-filter="order"></table>
+<script type="text/html" id="toolbar">
+    <div class="layui-btn-container">
+        <!--<button class="layui-btn layui-btn-danger" lay-event="deleteAll"><i class="layui-icon"></i>批量删除</button>-->
+        <!--<button class="layui-btn" lay-event="add"><i class="layui-icon"></i>添加</button>-->
+    </div>
+</script>
+<script type="text/html" id="bar">
+    <a lay-event="edit"><i class="layui-icon" style="font-size:20px">&#xe63c;</i></a>
+    <a lay-event="del"><i class="layui-icon" style="font-size:20px">&#xe640;</i></a>
+</script>
+<script type="text/html" id="orderStatus">
+    <!-- 这里的 checked 的状态只是演示 -->
+    <input type="checkbox" id="order-status" lay-event="order-status" name="orderStatus" value="{{d.orde_id}}"
+           lay-skin="switch" lay-text="已确认|待确认" lay-filter="orderStatus" {{
+           d.orde_status !== '0' ? 'disabled' : '' }} {{ d.orde_status !== '0' ? 'checked' : '' }}>
+    <input hidden value="" id="order-status-value">
+	<input type="checkbox" id="order-pay-status" lay-event="order-pay-status" name="orderPayStatus" value="{{d.orde_id}}"
+           lay-skin="switch" lay-text="已支付|未支付" lay-filter="orderPayStatus" {{
+           d.orde_pay_status !== '0' ? 'disabled' : '' }} {{ d.orde_pay_status !== '0' ? 'checked' : '' }}>
+    <input hidden value="" id="order-status-value">
+</script>
+<script>
+    $(function () {
+        var shop = layui.sessionData('shop').data;
+        console.log('shop:' + JSON.stringify(shop));
+        console.log(" and orde_shop_id =" + shop.shop_id);
+        var layerHeight = 50;
+        layui.use(['table', 'form', 'laydate'], function () {
+            var table = layui.table,
+                form = layui.form,
+                laydate = layui.laydate;
+            laydate.render({
+                elem: '#start-date',
+                done: function (value, date, endDate) {
+                    console.log("日期选择回调");
+                    console.log(value); //得到日期生成的值，如：2017-08-18
+                    console.log(date); //得到日期时间对象：{year: 2017, month: 8, date: 18, hours: 0, minutes: 0, seconds: 0}
+                    console.log("结束时间："+$("#end-date").val());
+                    var endDate = $("#end-date").val();
+                    if(endDate!=""){
+                        var newEndDate=new Date(endDate.replace("-", "/").replace("-", "/"));
+                        newEndDate = new Date(newEndDate.getTime()+(1000 * 60 * 60 * 24));
+                        endDate = dateFtt("yyyy-MM-dd",newEndDate)
+                        console.log("结束时间修改后："+endDate);
+                    }
+                    var condition = "";
+                    switch (value) {
+                        case "":
+                            console.log("清空");
+                            condition = "";
+                            if(endDate!=""){
+                                condition  = condition+" and orde_create_time<='"+endDate+"'";
+                            }
+                            console.log("condition:"+condition);
+                            tableReload(condition);
+                            break;
+                        default:
+                            console.log("现在或确定");
+                            condition = " and orde_create_time >='"+value+"'";
+                            if(endDate!=""){
+                                condition  = condition+" and orde_create_time<='"+endDate+"'";
+                            }
+                            console.log("condition:"+condition);
+                            tableReload(condition);
+                            break;
+                    }
+                }
+            });
+            laydate.render({
+                elem: '#end-date',
+                done: function (value, date, endDate) {
+                    console.log("日期选择回调");
+                    console.log(value); //得到日期生成的值，如：2017-08-18
+                    console.log(date); //得到日期时间对象：{year: 2017, month: 8, date: 18, hours: 0, minutes: 0, seconds: 0}
+                    console.log("开始时间："+$("#start-date").val());
+                    var startDate = $("#start-date").val();
+                    var endDate = value;
+                    if(endDate!=""){
+                        var newEndDate=new Date(endDate.replace("-", "/").replace("-", "/"));
+                        newEndDate = new Date(newEndDate.getTime()+(1000 * 60 * 60 * 24));
+                        endDate = dateFtt("yyyy-MM-dd",newEndDate)
+                        console.log("结束时间修改后："+endDate);
+                    }
+                    switch (value) {
+                        case "":
+                            console.log("清空");
+                            condition = "";
+                            if(startDate!=""){
+                                condition  = condition+" and orde_create_time>='"+startDate+"'";
+                            }
+                            console.log("condition:"+condition);
+                            tableReload(condition);
+                            break;
+                        default:
+                            console.log("现在或确定");
+                            condition = " and orde_create_time <='"+endDate+"'";
+                            if(startDate!=""){
+                                condition  = condition+" and orde_create_time>='"+startDate+"'";
+                            }
+                            console.log("condition:"+condition);
+                            tableReload(condition);
+                            break;
+                    }
+                }
+            });
+            //搜索选择框
+            form.on('select(contrller)', function (data) {
+                var condition = "";
+                switch (data.value) {
+                    case "0":
+                        condition = " and orde_status=0";
+                        break;
+                    case "1":
+                        condition = " and orde_status=1";
+                        break;
+                    case "2":
+                        condition = " and orde_status=2";
+                        break;
+                    default:
+                        break;
+                }
+                tableReload(condition);
+            });
+            //表格重载
+            function tableReload(condition){
+                condition = condition + " and orde_shop_id =" + shop.shop_id + " and orde_id = ordeta_orde_id";
+                table.reload('table_order', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    , where: {
+                        condition: condition
+                    }
+                });
+            }
+            table.render({
+                elem: '#order',
+                url: '/xgg/OrderFind',
+                method: 'post',
+                parseData: function (res) { //res 即为原始返回的数据
+                    return {
+                        "code": res.success ? 0 : 1, //解析接口状态
+                        "msg": res.msg, //解析提示文本
+                        "count": res.total, //解析数据长度
+                        "data": res.data //解析数据列表
+                    }
+                },
+                where: {
+                    condition: " and orde_shop_id =" + shop.shop_id + " and orde_id = ordeta_orde_id "
+                },
+                toolbar: '#toolbar',
+                title: '订单数据表',
+                cols: [[
+                    {type: 'checkbox'},
+
+                    {field: 'orde_shop_id', title: '商家id', hide: 'true'},
+                    {field: 'orde_cust_id', title: '用户id', hide: 'true'},
+                    {field: 'orde_head', title: '用户id', hide: 'true'},
+
+
+                    {field: 'orde_id', title: 'ID', unresize: true, sort: true, align: 'center', hide: 'true'},
+                    {field: 'orde_name', title: '订单名', edit: 'text', align: 'center', hide: 'true'},
+                    {field: 'orde_number', title: '单号', sort: true, width: 150},
+                    {field: 'orde_receiver', title: '收货人', sort: true, align: 'center'},
+                    {field: 'orde_phone', title: '联系方式', sort: true, align: 'center', width: 117},
+                    {field: 'orde_amount', title: '总价', sort: true, align: 'center'},
+                    {
+                        field: 'orde_status', title: '状态', sort: true, align: 'center', templet: function (d) {
+                            switch (d.orde_status) {
+                                case "0":
+                                    return "待确认";
+                                case "1":
+                                    return "已确认";
+                                case "2":
+                                    return "已完成";
+                            }
+                        }
+                    },
+                    {field: 'orde_pay_status', title: '支付状态', sort: true, align: 'center',templet: function (d) {
+		                    switch (d.orde_pay_status) {
+		                        case "0":
+		                            return "未支付";
+		                        case "1":
+		                            return "已支付";
+		                    }
+		                }
+                    },
+                    {field: 'orde_pay', title: '支付方式', align: 'center', minWidth: 90},
+                    {field: 'orde_create_time', title: '下单时间', sort: true, align: 'center', width: 180},
+                    {title: '订单确认', width: 110, event: 'order_status', templet: '#orderStatus', align: 'center'},
+                    {title: '操作', toolbar: '#bar', width: 80}
+                ]],
+                id: 'table_order',
+                page: true
+            });
+            //监听订单状态操作
+            form.on('switch(orderStatus)', function (obj) {
+
+                //layer.tips(this.value + ' ' + this.name + '：'+ obj.elem.checked, obj.othis);
+                //$(this).attr("disabled");
+                $(this).attr("disabled", "");
+                $(obj.othis).addClass("layui-checkbox-disbaled layui-disabled");
+
+
+                console.log("监听订单状态:" + this.value);
+                var paras = {orde_status: "1", orde_id: this.value};
+                paras = "paras=" + JSON.stringify(paras);
+                if (obj.elem.checked) {
+
+                    $("#order-status-value").val("1");
+                    //发异步，把数据提交给数据库
+                    $.ajax({
+                        type: "POST",
+                        url: "/xgg/OrderUpdate",
+                        data: paras,
+                        success: function (data, status) {		//请求成功后回调
+                            var msg = JSON.parse(data);
+                            if (msg.success) {					//修改成功操作
+                                layui.sessionData("order", {key: "data", value: msg.data[0]}); //将当前行数据封装到会话对象中
+                                layer.close(loadIndex);
+                                console.log("订单确认成功");
+                            }
+                        }
+                    });
+                } else {
+                    $("#order-status-value").val("0");
+                }
+
+            });
+
+            //搜索选择框
+            form.on('select(findBy)', function (data) {
+                switch (data.value) {
+                    case "orde_id":
+                        $("#findInput").attr('placeholder', "请输入id");
+                        break;
+                    case "orde_number":
+                        $("#findInput").attr('placeholder', "请输入订单号");
+                        break;
+                }
+            });
+            //执行重载
+            form.on('submit(sreach)', function (data) {
+                var findBy = data.field.findBy;
+                var findInput = data.field.findInput;
+                console.log('findBy:' + findBy);
+                console.log('findInput:' + findInput);
+                console.log("点击搜索");
+                table.reload('table_order', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    , where: {
+                        condition: function () {
+                            var condition = " and orde_shop_id =" + shop.shop_id + " and orde_id = ordeta_orde_id";
+                            switch (findBy) {
+                                case "orde_id":
+
+                                    condition += " and " + findBy + "=" + findInput;
+                                    console.log(condition);
+                                    break;
+                                case "orde_number":
+                                    condition += " and " + findBy + " like " + "\'%" + findInput + "%\'";
+                                    console.log(condition);
+                            }
+                            return condition;
+                        }
+                    }
+                });
+                return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+            });
+
+            //监听工具条
+            table.on('tool(order)', function (obj) { //注：tool是工具条事件名，test是table原始容器的属性 lay-filter="对应的值"
+                var data = obj.data;                     //获得当前行数据
+                var layEvent = obj.event;                //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+                var tr = obj.tr;                         //获得当前行 tr 的DOM对象
+                var orde_id = "orde_id=" + data.orde_id; //获取当前数据行id，用于删除
+                console.log("order_list:" + JSON.stringify(obj.data));
+
+                layui.sessionData("order", {key: "data", value: data}); //将当前行数据封装到会话对象中
+
+                if (layEvent === 'detail') { //查看
+                    //do somehing
+                } else if (layEvent === 'del') { //删除
+                    var newHeight = layerHeight + 50;
+                    layer.open({
+                        content: '真的删除行么？',
+                        offset: newHeight + "px",
+                        yes: function (index, layero) {
+                            //do something
+                            obj.del();
+                            layer.close(index); //如果设定了yes回调，需进行手工关闭
+                            //向服务端发送删除指令
+                            $.ajax({
+                                type: "POST",
+                                url: "/xgg/OrderDelete",
+                                data: {"orde_id": data.orde_id},
+                                success: function (data, status) {		//请求成功后回调
+                                    var msg = JSON.parse(data);
+                                    if (msg.success) {					//删除成功操作
+                                        console.log("删除成功！");
+                                    }
+                                }
+                            });
+                        }
+                    });
+
+                } else if (layEvent === 'edit') { //编辑
+
+                    layer.open({		//打开编辑页面
+                        type: 2,
+                        offset: layerHeight + "px",
+                        area: ['600px', '400px'],
+                        fix: false, //不固定
+                        maxmin: true,
+                        shadeClose: false,
+                        shade: 0.4,
+                        title: '订单详情',
+                        content: 'order-edit.html',
+                        end: function () {
+                            var order = layui.sessionData('order');	//获取修改后的数据
+                            console.log(JSON.stringify(order.data));
+
+
+                            //同步更新缓存对应的值
+                            console.log("当前行对应的数据：" + JSON.stringify(obj.data));
+                            console.log("同步更新缓存对应的值");
+                            obj.data = order.data;
+                            console.log("当前行对应的数据：" + JSON.stringify(obj.data));
+                            obj.update(order.data);
+                        }
+                    });
+                } else if (layEvent === 'order_status') {
+                    $("#order-status").val();
+                    if (data.orde_status === "0") {
+                        console.log($("#order-status-value").val());
+                        console.log("表格监听：" + JSON.stringify(data));
+                        obj.update({
+                            orde_status: "1"
+                        });
+                    }
+                }
+            });
+
+
+        });
+
+
+        $(document).scroll(function () { //页面加载时，获取滚动条初始高度
+            layerHeight = $(document).scrollTop() + 50; //获取滚动条初始高度的值 ：0
+        });
+
+
+    });
+</script>
+</body>
+
+</html>

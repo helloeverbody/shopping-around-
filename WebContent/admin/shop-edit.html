@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>欢迎页面-X-admin2.0</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="shortcut icon" href="/xgg/favicon.ico" type="image/x-icon"/>
+    <link rel="stylesheet" href="./css/font.css">
+    <link rel="stylesheet" href="./css/xadmin.css">
+    <script type="text/javascript" src="./lib/jquery/jquery-3.3.1.js"></script>
+    <script type="text/javascript" src="./lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="./js/xadmin.js"></script>
+    <script type="text/javascript" src="./js/xcity.js"></script>
+    <!-- 七牛图片上传 -->
+    <script src="./lib/qiniu/moxie.js"></script>
+    <script src="./lib/qiniu/plupload.min.js"></script>
+    <script src="./lib/qiniu/qiniu.js"></script>
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+<div class="x-body">
+    <form class="layui-form layui-form-pane" lay-filter="shop">
+        <div class="layui-form-item layui-hide">
+            <div class="layui-input-inline">
+                <input type="text" id="shop_id" name="shop_id" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+
+
+        <div class="layui-form-item">
+            <label for="shop_name" class="layui-form-label">
+                <span class="x-red"></span>店名
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="shop_name" name="shop_name" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label for="shop_account" class="layui-form-label">
+                <span class="x-red"></span>账号
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="shop_account" name="shop_account"
+                       autocomplete="off" class="layui-input">
+            </div>
+            <div class="layui-form-mid layui-word-aux">
+                <span class="x-red"></span>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label for="shop_password" class="layui-form-label">
+                <span class="x-red"></span>密码
+            </label>
+            <div class="layui-input-inline">
+                <input type="password" id="shop_password" name="shop_password" autocomplete="off" class="layui-input">
+            </div>
+            <div class="layui-form-mid layui-word-aux">
+                
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">店主</label>
+            <div class="layui-input-inline">
+                <input type="text" id="shop_owner" name="shop_owner" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <div class="layui-inline">
+                <label class="layui-form-label">分类</label>
+                <div class="layui-input-inline">
+                    <input type="text" id="shop_clas_id" name="shop_clas_id" autocomplete="off" class="layui-input">
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="layui-form-item">
+            <label for="shop_phone" class="layui-form-label">
+                <span class="x-red"></span>手机号
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="shop_phone" name="shop_phone" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label for="shop_label" class="layui-form-label">
+                <span class="x-red"></span>店铺标签
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="shop_label" name="shop_label" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label for="shop_level" class="layui-form-label">
+                <span class="x-red"></span>店铺评分
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="shop_level" name="shop_level" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label for="shop_check" class="layui-form-label">
+                <span class="x-red"></span>店铺审核
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="shop_check" name="shop_check" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+
+        <div class="layui-form-item layui-hide">
+            <label for="shop_head" class="layui-form-label">
+                <span class="x-red"></span>头像
+            </label>
+            <div class="layui-input-inline layui-hide">
+                <input type="text" id="shop_head" name="shop_head" autocomplete="off" class="layui-input">
+            </div>
+           
+        </div>
+        <div  class="layui-form-item" id="thumbnail" style="width: 300px" pane>
+
+            <div style="background-color: #FBFBFB; width:110px; height: 80px; border-right:1px solid #E6E6E6;float: left">
+                <span style="display:block;line-height:80px;text-align: center">头像</span>
+
+            </div>
+
+            <div style="width:189px;float: left" align="center">
+                <img id="uploadImg" height="80px" src="">
+            </div>
+
+
+        </div>
+
+        <div class="layui-form-item layui-form-text" >
+            <label class="layui-form-label ">公告
+            </label>
+
+            <div class="layui-input-block">
+                <textarea  id="shop_notice" name="shop_notice" class="layui-textarea"></textarea>
+            </div>
+        </div>
+
+        <!--<div class="layui-form-item">
+            <label for="btnSubmit" class="layui-form-label">
+            </label>
+            <button id="btnSubmit" class="layui-btn" lay-filter="edit" lay-submit="">
+                修改
+            </button>
+        </div>-->
+    </form>
+</div>
+<script>
+    $(function () {
+        var shopData;    //全局用户数据
+        var loadIndex;       //加载，用于开始和关闭加载动画
+        var imgKey;          //用于删除七牛云上的图片
+        layui.use(['form', 'layer', 'laydate'], function () {
+            form = layui.form;
+            var layer = layui.layer;
+            var laydate = layui.laydate;
+            var shop = layui.sessionData("shop");
+
+            console.log(shop.data.shop_head);
+            var shopData = shop.data;
+            switch (shopData.shop_check) {
+                case 0:
+                    shopData.shop_check = "待审核";
+                    break;
+                case 1:
+                    shopData.shop_check = "已通过";
+                    break;
+                case 2:
+                    shopData.shop_check = "未通过";
+                    break;
+            }
+            form.val("shop",shopData);
+            $("#uploadImg").attr("src",shop.data.shop_head);
+
+        });
+
+           
+
+           
+                  
+
+
+            
+
+    });
+</script>
+
+</body>
+
+</html>

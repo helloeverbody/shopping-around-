@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>欢迎页面-X-admin2.0</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="shortcut icon" href="/xgg/favicon.ico" type="image/x-icon"/>
+    <link rel="stylesheet" href="./css/font.css">
+    <link rel="stylesheet" href="./css/xadmin.css">
+    <script type="text/javascript" src="./lib/jquery/jquery-3.3.1.js"></script>
+    <script type="text/javascript" src="./lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="./js/xadmin.js"></script>
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <style>
+        .layui-table-cell {
+            height: auto;
+            line-height: 28px;
+        }
+
+        .layui-table img {
+            max-width: 100px;
+        }
+    </style>
+</head>
+<body class="layui-anim layui-anim-up">
+<div class="x-nav">
+		<span class="layui-breadcrumb">
+			<a href="">首页</a>
+			<a href="">商品管理</a>
+			<a>
+				<cite>商品列表</cite>
+			</a>
+
+		</span>
+    <a class="layui-btn layui-btn-small" style="line-height:1.6em;margin-top:3px;float:right"
+       href="javascript:location.replace(location.href);" title="刷新"> <i class="layui-icon"
+                                                                         style="line-height:30px">ဂ</i>
+    </a>
+</div>
+<div class="x-body" style="padding:0px; margin-bottom:0px;">
+    <div class="layui-row">
+        <form class="layui-form layui-col-md12 x-so" style="padding:0px; margin-bottom:0px;margin-top:10px;">
+            <div class="layui-inline">
+                <select name="findBy" lay-verify="required" lay-filter="findBy" id="findBy">
+                    <option value="prod_id">通过Id查询</option>
+                    <option value="prod_name" selected>通过商品名查询</option>
+                </select>
+            </div>
+            <input type="text" name="findInput" id="findInput" placeholder="请输入商品名" autocomplete="off"
+                   class="layui-input" data-type="reload">
+            <button class="layui-btn" lay-submit lay-filter="sreach"><i class="layui-icon">&#xe615;</i>
+            </button>
+
+        </form>
+    </div>
+</div>
+<table class="layui-table layui-hide" id="product" style="margin-top:0" lay-filter="product"></table>
+<script type="text/html" id="toolbar">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-danger" lay-event="deleteAll"><i class="layui-icon"></i>批量删除</button>
+        <button class="layui-btn" lay-event="add"><i class="layui-icon"></i>添加</button>
+    </div>
+</script>
+<script type="text/html" id="bar">
+    <a lay-event="edit"><i class="layui-icon" style="font-size:20px">&#xe631;</i></a>
+    <a lay-event="del"><i class="layui-icon" style="font-size:20px">&#xe640;</i></a>
+</script>
+<script>
+    $(function () {
+        var shop = layui.sessionData('shop').data;
+        console.log('shop:'+JSON.stringify(shop));
+        console.log(" and prod_shop_id ="+shop.shop_id);
+        var layerHeight = 50;
+        layui.use(['table', 'form'], function () {
+            var table = layui.table,
+                form = layui.form;
+
+            table.render({
+                elem: '#product',
+                url: '/xgg/ProductFind',
+                method: 'post',
+                parseData: function (res) { //res 即为原始返回的数据
+                    return {
+                        "code": res.success ? 0 : 1, //解析接口状态
+                        "msg": res.msg, //解析提示文本
+                        "count": res.total, //解析数据长度
+                        "data": res.data //解析数据列表
+                    }
+                },
+                where:{
+                    condition:" and prod_shop_id ="+shop.shop_id
+                },
+                toolbar: '#toolbar',
+                title: '商品数据表',
+                cols: [[
+                    {type: 'checkbox'},
+                    {field: 'prod_id', title: 'ID', unresize: true, sort: true},
+                    {field: 'prod_shop_id', title: '商家id' ,hide:'true'},
+                    {field: 'prod_name', title: '商品名', edit: 'text'},
+                    {field: 'prod_clas_id', title: '分类'},
+                    {field: 'prod_price', title: '单价', sort: true},
+                    {
+                        field: 'prod_head', title: '图片', templet: function (d) {
+
+                            if (d.prod_head == undefined) {
+                                return "";
+                            }
+                            return '<div><img src="' + d.prod_head + '" style:"width:100px; "/></div>'
+                        }
+                        , width: 120, align: 'center'
+                    },
+                    {title: '操作', toolbar: '#bar', width: 80}
+                ]],
+                id: 'table_product',
+                page: true
+            });
+
+            //搜索选择框
+            form.on('select(findBy)', function (data) {
+                switch (data.value) {
+                    case "prod_id":
+                        $("#findInput").attr('placeholder', "请输入id");
+                        break;
+                    case "prod_name":
+                        $("#findInput").attr('placeholder', "请输入商品名");
+                        break;
+                }
+            });
+            //执行重载
+            form.on('submit(sreach)', function (data) {
+                var findBy = data.field.findBy;
+                var findInput = data.field.findInput;
+                console.log('findBy:'+findBy);
+                console.log('findInput:'+findInput);
+                console.log("点击搜索");
+                table.reload('table_product', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    , where: {
+                        condition: function () {
+                            var condition;
+                            switch (findBy) {
+                                case "prod_id":
+
+                                    condition = " and " + findBy + "=" + findInput;
+                                    console.log(condition);
+                                    break;
+                                case "prod_name":
+                                    condition = " and " + findBy + " like " + "\'%" + findInput + "%\'";
+                                    console.log(condition);
+                            }
+                            return condition;
+                        }
+                    }
+                });
+                return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+            });
+
+            //监听工具条
+            table.on('tool(product)', function (obj) { //注：tool是工具条事件名，test是table原始容器的属性 lay-filter="对应的值"
+                var data = obj.data;                     //获得当前行数据
+                var layEvent = obj.event;                //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+                var tr = obj.tr;                         //获得当前行 tr 的DOM对象
+                var prod_id = "prod_id=" + data.prod_id; //获取当前数据行id，用于删除
+                console.log("product_list:"+JSON.stringify(obj.data));
+                console.log("session:"+JSON.stringify(layui.sessionData("product").data));
+                layui.sessionData("product", {key: "data", value: data}); //将当前行数据封装到会话对象中
+                console.log("session:"+JSON.stringify(layui.sessionData("product").data));
+                if (layEvent === 'detail') { //查看
+                    //do somehing
+                } else if (layEvent === 'del') { //删除
+                    var newHeight = layerHeight + 50;
+                    layer.open({
+                        content: '真的删除行么？',
+                        offset: newHeight + "px",
+                        yes: function (index, layero) {
+                            //do something
+                            obj.del();
+                            layer.close(index); //如果设定了yes回调，需进行手工关闭
+                            //向服务端发送删除指令
+                            $.ajax({
+                                type: "POST",
+                                url: "/xgg/ProductDelete",
+                                data: {"prod_id": data.prod_id},
+                                success: function (data, status) {		//请求成功后回调
+                                    var msg = JSON.parse(data);
+                                    if (msg.success) {					//删除成功操作
+                                        console.log("删除成功！");
+                                    }
+                                }
+                            });
+                        }
+                    });
+
+                } else if (layEvent === 'edit') { //编辑
+
+                    layer.open({		//打开编辑页面
+                        type: 2,
+                        offset: layerHeight + "px",
+                        area: ['600px', '400px'],
+                        fix: false, //不固定
+                        maxmin: true,
+                        shadeClose: false,
+                        shade: 0.4,
+                        title: '编辑',
+                        content: 'product-edit.html',
+                        end: function () {
+                            var product = layui.sessionData('product');	//获取修改后的数据
+                            console.log(JSON.stringify(product.data));
+
+
+                            //同步更新缓存对应的值
+                            console.log("当前行对应的数据："+JSON.stringify(obj.data));
+                            console.log("同步更新缓存对应的值");
+                            obj.data = product.data;
+                            console.log("当前行对应的数据："+JSON.stringify(obj.data));
+                            obj.update(product.data);
+                        }
+                    });
+                }
+            });
+
+            //监听事件
+            table.on('toolbar(product)', function (obj) {
+                var checkStatus = table.checkStatus(obj.config.id);
+                switch (obj.event) {
+                    case 'add':     //添加商品
+
+                        layer.open({		//打开添加页面
+                            type: 2,
+
+                            area: ['600px', '400px'],
+                            fix: false, //不固定
+                            maxmin: true,
+                            shadeClose: false,
+                            shade: 0.4,
+                            title: '添加',
+                            content: 'product-add.html',
+                            cancel: function (index, layero) {
+                                layui.sessionData("productAdd", null);
+                            },
+                            end: function () {
+                                var product = layui.sessionData('productAdd');	//获取修改后的数据
+                                console.log("productAdd:"+JSON.stringify(product));
+                                if ($.isEmptyObject(product)) {
+                                    console.log("stop");
+                                    return;
+                                }
+                                layer.msg('添加成功', {
+                                    icon: 1,
+                                    time: 2000 //2秒关闭（如果不配置，默认是3秒）
+                                });
+                                table.reload('table_product', {
+                                    page: {
+                                        curr: 1     //当前页码
+                                    }
+                                    , where: {
+                                        condition: function () {
+                                            var product = layui.sessionData('productAdd');	//获取增加后的数据
+                                            var prod_id = product.data.prod_id;
+                                            var condition = " and prod_id=" + prod_id;
+                                            console.log("新增商品condition："+condition);
+                                            return condition;
+                                        }
+                                    }
+                                });
+
+                            }
+                        });
+
+                        break;
+                    case 'deleteAll':
+                        var index = layer.load();   //显示加载中
+                        var data = checkStatus.data;
+                        var prod_id = new Array();
+                        var prod_head = new Array();
+                        for (var i in data) {
+                            prod_id.push(data[i].prod_id);
+                            if (data[i].pord_head != "" && data[i].prod_head !=null ) {
+
+                                prod_head.push(data[i].prod_head.replace(QINIU_DOMAIN, ""));
+                                console.log(data[i].prod_head);
+                            }
+                        }
+                        console.log("obj:" + JSON.stringify(obj));
+                        console.log("obj:" + JSON.stringify(checkStatus));
+                        console.log("obj:" + Object.keys(checkStatus));
+                        console.log("");
+                        console.log(prod_head);
+                        console.log(prod_id);
+                        console.log(JSON.stringify(prod_head));
+                        console.log(JSON.stringify(prod_id));
+
+                        var newProd_id = JSON.stringify(prod_id).replace("[","(").replace("]",")");
+                        console.log("newProd_id:"+newProd_id);
+
+                        //向服务端发送删除指令
+                        $.ajax({
+                            type: "POST",
+                            url: "/xgg/ProductQuickBatchDelete",
+                            data: {
+                                "prod_id": newProd_id,
+                                "prod_head": JSON.stringify(prod_head)
+                            },
+                            success: function (data, status) {		//请求成功后回调
+                                var msg = JSON.parse(data);
+                                console.log(data);
+                                var curr = obj.config.page.curr;
+                                var count = obj.config.page.count;
+                                var limit = obj.config.page.limit;
+                                var pages = obj.config.page.pages;
+                                var delCount = checkStatus.data.length;
+                                console.log("curr:" + curr);
+                                console.log("count:" + count);
+                                console.log("limit:" + limit);
+                                console.log("pages:" + pages);
+                                console.log("delCount:" + delCount);
+                                var newCount = count - delCount;
+                                var newPages = Math.ceil(newCount / limit);
+                                console.log("curr:" + curr);
+                                console.log("newPages:" + newPages);
+
+                                var newCurr;
+                                if(curr==1){
+                                    newCurr = 1;
+                                }else if(curr==pages){
+                                    if(delCount < count-(pages-1)*limit){
+                                        newCurr = pages;
+                                    }else{
+                                        newCurr = pages-1;
+                                    }
+                                }else{
+                                    newCurr = curr;
+                                }
+                                console.log("最终当前页："+newCurr);
+
+
+                                if (msg.success) {					//删除成功操作
+                                    console.log("删除成功！");
+                                    table.reload('table_product', {
+                                        page: {
+                                            curr: newCurr
+                                        }
+
+                                    });
+                                    layer.close(index);
+                                }
+                            }
+                        });
+                        break;
+
+                }
+            });
+
+        });
+
+
+        $(document).scroll(function () { //页面加载时，获取滚动条初始高度
+            layerHeight = $(document).scrollTop() + 50; //获取滚动条初始高度的值 ：0
+        });
+
+
+    });
+</script>
+</body>
+
+</html>

@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>欢迎页面-X-admin2.0</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="shortcut icon" href="/xgg/favicon.ico" type="image/x-icon"/>
+    <link rel="stylesheet" href="./css/font.css">
+    <link rel="stylesheet" href="./css/xadmin.css">
+    <script type="text/javascript" src="./lib/jquery/jquery-3.3.1.js"></script>
+    <script type="text/javascript" src="./lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="./js/xadmin.js"></script>
+    <script type="text/javascript" src="./js/xcity.js"></script>
+    <!-- 七牛图片上传 -->
+    <script src="./lib/qiniu/moxie.js"></script>
+    <script src="./lib/qiniu/plupload.min.js"></script>
+    <script src="./lib/qiniu/qiniu.js"></script>
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+<div class="x-body">
+    <form class="layui-form" lay-filter="customer">
+        <div class="layui-form-item layui-hide">
+            <div class="layui-input-inline">
+                <input type="text" id="cust_id" name="cust_id" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+
+        <div class="layui-form-item">
+            <label for="cust_account" class="layui-form-label">
+                <span class="x-red">*</span>账号
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="cust_account" name="cust_account"
+                       autocomplete="off" class="layui-input">
+            </div>
+            <div class="layui-form-mid layui-word-aux">
+                <span class="x-red">*</span>将会成为您唯一的登入名
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label for="cust_name" class="layui-form-label">
+                <span class="x-red">*</span>用户名
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="cust_name" name="cust_name" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label for="cust_password" class="layui-form-label">
+                <span class="x-red">*</span>密码
+            </label>
+            <div class="layui-input-inline">
+                <input type="password" id="cust_password" name="cust_password" autocomplete="off" class="layui-input">
+            </div>
+            <div class="layui-form-mid layui-word-aux">
+                6到16个字符
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">性别</label>
+            <div class="layui-input-block">
+                <input type="radio" name="cust_sex" value="1" title="男">
+                <input type="radio" name="cust_sex" value="2" title="女">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <div class="layui-inline">
+                <label class="layui-form-label">生日</label>
+                <div class="layui-input-inline">
+                    <input type="text" class="layui-input" autocomplete="off" id="cust_birthday" name="cust_birthday"
+                           placeholder="yyyy-MM-dd">
+                </div>
+            </div>
+        </div>
+
+        <div class="layui-form-item" id="x-city">
+            <label class="layui-form-label">地址</label>
+            <div class="layui-input-inline" style="width:100px">
+                <select name="province" lay-filter="province">
+                    <option value="">请选择省</option>
+                </select>
+            </div>
+            <div class="layui-input-inline" style="width:100px">
+                <select name="city" lay-filter="city">
+                    <option value="">请选择市</option>
+                </select>
+            </div>
+            <div class="layui-input-inline" style="width:120px">
+                <select name="area" lay-filter="area">
+                    <option value="">请选择县/区</option>
+                </select>
+            </div>
+
+        </div>
+        <div class="layui-form-item">
+            <label for="cust_address" class="layui-form-label">
+                <span class="x-red">*</span>详细地址
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="cust_address" name="cust_address" autocomplete="off" class="layui-input"
+                       placeholder="详细地址">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label for="cust_phone" class="layui-form-label">
+                <span class="x-red">*</span>手机号
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="cust_phone" name="cust_phone" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label for="cust_head" class="layui-form-label">
+                <span class="x-red">*</span>头像
+            </label>
+            <div class="layui-input-inline layui-hide">
+                <input type="text" id="cust_head" name="cust_head" autocomplete="off" class="layui-input">
+            </div>
+            <button type="button" class="layui-btn" id="uploadHead">
+                <i class="layui-icon">&#xe67c;</i>上传图片
+            </button>
+        </div>
+        <div class="layui-form-item" id="thumbnail">
+            <label class="layui-form-label">缩略图
+            </label>
+            <img id="uploadImg" height="80px" src="">
+        </div>
+        <div class="layui-form-item" id="preview">
+            <label class="layui-form-label">预览
+            </label>
+            <img id="previewHead" height="80px" src="">
+            <input class="layui-hide" id="previewIsfull" value="false"/>
+        </div>
+
+        <div class="layui-form-item">
+            <label for="btnSubmit" class="layui-form-label">
+            </label>
+            <button id="btnSubmit" class="layui-btn" lay-filter="edit" lay-submit="">
+                修改
+            </button>
+        </div>
+    </form>
+</div>
+<script>
+    $(function () {
+        var customerData;    //全局用户数据
+        var loadIndex;       //加载，用于开始和关闭加载动画
+        var imgKey;          //用于删除七牛云上的图片
+        layui.use(['form', 'layer', 'laydate'], function () {
+            form = layui.form;
+            var layer = layui.layer;
+            var laydate = layui.laydate;
+            laydate.render({
+                elem: '#cust_birthday'
+            });
+            var customer = layui.sessionData('customer');	//获取当前行数据
+            $("#uploadImg").attr("src", customer.data.cust_head);
+            /* 初始化省市区三级联动 */
+            $('#x-city').xcity(customer.data.cust_province, customer.data.cust_city, customer.data.cust_area);
+            /* 修改性别单选框显示 */
+            $("input:radio[name='cust_sex'][value=" + customer.data.cust_sex + "]").attr("checked", true);
+            /*form.val("customer", { 		//表单初始赋值
+                "cust_id": customer.data.cust_id,
+                "cust_name": customer.data.cust_name,
+                "cust_sex": customer.data.cust_sex,
+                "cust_birthday": customer.data.cust_birthday,
+                "cust_account": customer.data.cust_account,
+                "cust_password": customer.data.cust_password,
+                "cust_phone": customer.data.cust_phone,
+                "cust_address": customer.data.cust_address,
+                "cust_head": customer.data.cust_head
+            });*/
+            form.val("customer",customer.data);
+
+            //监听提交
+            form.on('submit(edit)', function (data) {
+                loadIndex = layer.load();   //显示加载中
+                imgKey = $("#cust_head").val();
+                console.log("keyOld: " + imgKey);
+                customerData = data.field; //全局用于数据赋值
+
+                if ($("#previewIsfull").val() == "true") {  //如果有已选择图片文件，则上传key更新头像
+                    uploader.start();     //开始上传图片到七牛云
+                }else{
+                    customerUpdate(customerData,imgKey);
+                }
+                return false;              //取消表单跳转
+            });
+
+            //提交数据到后台，更新数据
+            function customerUpdate(customerData,key) {
+
+                var customer = customerData;
+                var keyNew = $("#cust_head").val();
+                console.log("keyNew: " + keyNew);
+                console.log('BEFORE:'+JSON.stringify(customer));
+                customer.cust_province = customer.province;
+                customer.cust_city = customer.city;
+                customer.cust_area = customer.area;
+                customer.cust_head = $('#cust_head').val();
+                delete customer.province;
+                delete customer.city;
+                delete customer.area;
+
+                console.log('AFTER:'+JSON.stringify(customer));
+                var paras = "paras=" + JSON.stringify(customer);
+
+                if ($("#previewIsfull").val() == "true" && key != "") {  //如果有已选择图片文件，则上传key更新头像
+                    key = "key=" + key.replace(QINIU_DOMAIN, "");          //七牛原图片key，用于删除原来的图片
+                    paras = paras + "&" + key;		//传到服务的参数
+                }
+                console.log("previewIsfull: " + $("#previewIsfull").val());
+                console.log("paras: " + paras);
+                //发异步，把数据提交给数据库
+                $.ajax({
+                    type: "POST",
+                    url: "/xgg/CustomerUpdate",
+                    data: paras,
+                    success: function (data, status) {		//请求成功后回调
+                        var msg = JSON.parse(data);
+                        if (msg.success) {					//修改成功操作
+                            layui.sessionData("customer", {key: "data", value: msg.data[0]}); //将当前行数据封装到会话对象中
+                            layer.close(loadIndex);
+                            var index = parent.layer.getFrameIndex(window.name);
+                            parent.layer.close(index);
+                            // layer.alert("修改成功", {icon: 6}, function () {
+                            //     // 获得frame索引
+                            //     var index = parent.layer.getFrameIndex(window.name);
+                            //     //关闭当前frame
+                            //     parent.layer.close(index);
+                            // });
+                        }
+                    }
+                });
+
+            }
+
+
+            var uploader = Qiniu.uploader({
+                disable_statistics_report: false,              // 禁止自动发送上传统计信息到七牛，默认允许发送
+                runtimes: 'html5,flash,html4',                 // 上传模式，依次退化
+                browse_button: 'uploadHead',                   // 上传选择的点选按钮，必需
+                // container: 'container',                        // 上传区域DOM ID，默认是browser_button的父元素
+                max_file_size: '100mb',                        // 最大文件体积限制
+                flash_swf_url: './lib/qiniu/Moxie.swf',        // 引入flash，相对路径
+                dragdrop: false,                               // 关闭可拖曳上传
+                chunk_size: '4mb',                             // 分块上传时，每块的体积
+                multi_selection: !(moxie.core.utils.Env.OS.toLowerCase() === "ios"),
+                uptoken_url: '/xgg/GetUptoken',                            // 在初始化时，uptoken，uptoken_url，uptoken_func三个参数中必须有一个被设置,uptoken是上传凭证，由其他程序生成;uptoken_url是提供了获取上传凭证的地址，如果需要定制获取uptoken的过程则可以设置uptoken_func;其优先级为uptoken > uptoken_url > uptoken_func
+                domain: QINIU_DOMAIN,   // bucket域名，下载资源时用到，必需
+                get_new_uptoken: true,                         // 设置上传文件的时候是否每次都重新获取新的uptoken
+                auto_start: false,                              // 选择文件后自动上传，若关闭需要自己绑定事件触发上传
+                max_retries: 3,                                // 上传失败最大重试次数
+                //save_key: true,
+                /* resize: {                                      // 想限制上传图片尺寸，直接用resize这个属性
+                    width: 300,
+                    height: 300
+                }, */
+                init: {
+                    'FilesAdded': function (up, files) {        // 文件添加进队列后，处理相关的事情
+                        plupload.each(files, function (file) {
+                            previewImage(file, function (src) {
+                                $("#previewHead").attr("src", src);
+                                $("#previewIsfull").val("true");		//设置判断是否已选择文件
+                            });
+
+                        });
+                    },
+                    'BeforeUpload': function (up, file) {       // 每个文件上传前，处理相关的事情
+                        console.log("上传前");
+                        //$(".upload-progress").show();
+                    },
+                    'UploadProgress': function (up, file) {     // 每个文件上传时，处理相关的事情
+                        console.log("上传中");
+                        //$(".upload-progress").html("上传进度:"+file.percent + "%");
+                    },
+                    'FileUploaded': function (up, file, info) {  // 每个文件上传成功后，处理相关的事情
+                        console.log("上传成功");
+                        //$(".upload-progress").hide();
+                        var domain = up.getOption('domain');
+                        //var res = JSON.parse(info);
+                        //var img = new Image();                 //创建一个Image对象，实现图片的预下载
+                        //img.src = "http://qiniu.com/"+res.key;
+
+
+                        var res = JSON.parse(info.response);
+                        var src = domain + res.key;
+                        $("#uploadImg").attr("src", src);
+
+                        //图片上传成功后，提交ajax到后台更新数据
+                        customerUpdate(customerData,imgKey);
+
+
+                    },
+                    'Error': function (up, err, errTip) {
+                        console.log("上传出错")
+                        console.log(err);
+                    },
+                    'UploadComplete': function () {
+                        //队列文件处理完毕后，处理相关的事情
+                    },
+                    'Key': function (up, file) {
+                        // 若想在前端对每个文件的key进行个性化处理，可以配置该函数
+                        // 该配置必须要在 unique_names: false , save_key: false 时才生效
+
+                        var key = "image_" + createImgKey() + ".png";
+                        $('#cust_head').val(QINIU_DOMAIN + key);
+                        console.log("cust_head: " + $('#cust_head').val());
+                        console.log("img/:" + key);
+                        // do something with key here
+                        return key;
+                    }
+                }
+            });
+
+
+            function previewImage(file, callback) {//file为plupload事件监听函数参数中的file对象,callback为预览图片准备完成的回调函数
+                if (!file || !/image\//.test(file.type)) return; //确保文件是图片
+                if (file.type == 'image/gif') {//gif使用FileReader进行预览,因为mOxie.Image只支持jpg和png
+                    var fr = new moxie.file.FileReader();
+                    fr.onload = function () {
+                        callback(fr.result);
+                        fr.destroy();
+                        fr = null;
+                    }
+                    fr.readAsDataURL(file.getSource());
+                } else {
+                    var preloader = new moxie.image.Image();
+                    preloader.onload = function () {
+                        //preloader.downsize( 100, 30 );//先压缩一下要预览的图片,宽300，高300
+                        var imgsrc = preloader.type == 'image/jpeg' ? preloader.getAsDataURL('image/jpeg', 80) : preloader.getAsDataURL(); //得到图片src,实质为一个base64编码的数据
+                        callback && callback(imgsrc); //callback传入的参数为预览图片的url
+                        preloader.destroy();
+                        preloader = null;
+                    };
+                    preloader.load(file.getSource());
+                }
+            }
+
+        });
+
+    });
+</script>
+
+</body>
+
+</html>

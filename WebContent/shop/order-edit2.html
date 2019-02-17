@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>欢迎页面-X-admin2.0</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="shortcut icon" href="/xgg/favicon.ico" type="image/x-icon"/>
+    <link rel="stylesheet" href="./css/font.css">
+    <link rel="stylesheet" href="./css/xadmin.css">
+    <script type="text/javascript" src="./lib/jquery/jquery-3.3.1.js"></script>
+    <script type="text/javascript" src="./lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="./js/xadmin.js"></script>
+    <script type="text/javascript" src="./js/xcity.js"></script>
+    <!-- 七牛图片上传 -->
+    <script src="./lib/qiniu/moxie.js"></script>
+    <script src="./lib/qiniu/plupload.min.js"></script>
+    <script src="./lib/qiniu/qiniu.js"></script>
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+<div class="x-body">
+    <form class="layui-form" lay-filter="order">
+        <div class="layui-form-item">
+            <label for="prod_name" class="layui-form-label">
+                <span class="x-red">*</span>商品名
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="prod_name" name="prod_name" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label for="prod_price" class="layui-form-label">
+                <span class="x-red">*</span>价格
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="prod_price" name="prod_price" autocomplete="off" class="layui-input">
+            </div>
+            <div class="layui-form-mid layui-word-aux">
+                单位：元
+            </div>
+        </div>
+
+
+
+
+        <div class="layui-form-item">
+            <label for="orderRegist" class="layui-form-label">
+            </label>
+            <button id="orderRegist" class="layui-btn" lay-filter="edit" lay-submit="">
+                修改
+            </button>
+        </div>
+    </form>
+</div>
+<script>
+    $(function () {
+        var orderData;    //全局用户数据
+        var loadIndex;       //加载，用于开始和关闭加载动画
+        var imgKey;          //用于删除七牛云上的图片
+        layui.use(['form', 'layer'], function () {
+            form = layui.form;
+            var layer = layui.layer;
+            var order = layui.sessionData('order').data;	//获取当前行数据
+            $("#uploadImg").attr("src", order.prod_head);
+
+            //表单初始赋值
+            form.val("order", order);
+
+            //监听提交
+            form.on('submit(edit)', function (data) {
+                //显示加载中
+                loadIndex = layer.load();
+                imgKey = $("#prod_head").val();
+                //全局用于数据赋值
+                orderData = data.field;
+
+                if ($("#previewIsfull").val() == "true") {  //如果有已选择图片文件，则上传key更新头像
+                    uploader.start();     //开始上传图片到七牛云
+                }else{
+                    orderUpdate(orderData,imgKey);
+                }
+                return false;              //取消表单跳转
+            });
+
+            //提交数据到后台，更新数据
+            function orderUpdate(orderData,key) {
+                //var order = orderData;
+                var keyNew = $("#prod_head").val();
+
+                orderData.prod_head = $('#prod_head').val();
+
+                console.log("**************************************************");
+                console.log("before:"+JSON.stringify(order));
+                order = objUpdate(order,orderData);
+                console.log("after:"+JSON.stringify(order));
+
+                console.log("**************************************************");
+                var paras = "paras=" + JSON.stringify(order);
+
+                if ($("#previewIsfull").val() == "true" && key != "") {  //如果有已选择图片文件，则上传key更新头像
+                    key = "key=" + key.replace(QINIU_DOMAIN, "");          //七牛原图片key，用于删除原来的图片
+                    paras = paras + "&" + key;		//传到服务的参数
+                }
+
+
+
+
+
+
+                //发异步，把数据提交给数据库
+                $.ajax({
+                    type: "POST",
+                    url: "/xgg/OrderUpdate",
+                    data: paras,
+                    success: function (data, status) {		//请求成功后回调
+                        var msg = JSON.parse(data);
+                        if (msg.success) {					//修改成功操作
+                            layui.sessionData("order", {key: "data", value: msg.data[0]}); //将当前行数据封装到会话对象中
+                            layer.close(loadIndex);
+                            var index = parent.layer.getFrameIndex(window.name);
+                            parent.layer.close(index);
+
+                        }
+                    }
+                });
+
+            }
+
+           
+
+        });
+
+
+    });
+</script>
+
+</body>
+
+</html>

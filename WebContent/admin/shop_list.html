@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>欢迎页面-X-admin2.0</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="shortcut icon" href="/xgg/favicon.ico" type="image/x-icon"/>
+    <link rel="stylesheet" href="./css/font.css">
+    <link rel="stylesheet" href="./css/xadmin.css">
+    <script type="text/javascript" src="./lib/jquery/jquery-3.3.1.js"></script>
+    <script type="text/javascript" src="./lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="./js/xadmin.js"></script>
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <style>
+        .layui-table-cell {
+            height: auto;
+            line-height: 28px;
+        }
+
+        .layui-table img {
+            max-width: 100px;
+        }
+        .layui-form-checkbox span{
+            color: #000000;
+        }
+    </style>
+</head>
+<body class="layui-anim layui-anim-up">
+<div class="x-nav">
+		<span class="layui-breadcrumb">
+			<a href="">首页</a>
+			<a href="">商家管理</a>
+			<a>
+				<cite>商家列表</cite>
+			</a>
+
+		</span>
+    <a class="layui-btn layui-btn-small" style="line-height:1.6em;margin-top:3px;float:right"
+       href="javascript:location.replace(location.href);" title="刷新"> <i class="layui-icon"
+                                                                         style="line-height:30px">ဂ</i>
+    </a>
+</div>
+<div class="x-body" style="padding:0px; margin-bottom:0px;">
+    <div class="layui-row">
+        <form class="layui-form layui-col-md12 x-so" style="padding:0px; margin-bottom:0px;margin-top:10px;">
+            <div class="layui-inline">
+                <select name="findBy" lay-verify="required" lay-filter="findBy" id="findBy">
+                    <option value="shop_id">通过Id查询</option>
+                    <option value="shop_name" selected>通过商家名查询</option>
+                    <option value="shop_account">通过账号查询</option>
+                </select>
+            </div>
+            <input type="text" name="findInput" id="findInput" placeholder="请输入商家名" autocomplete="off"
+                   class="layui-input" data-type="reload">
+            <button class="layui-btn" lay-submit lay-filter="sreach"><i class="layui-icon">&#xe615;</i>
+            </button>
+
+        </form>
+    </div>
+</div>
+<table class="layui-table layui-hide" id="shop" style="margin-top:0" lay-filter="shop"></table>
+
+<script type="text/html" id="bar">
+    <a lay-event="edit"><i class="layui-icon" style="font-size:20px">&#xe63c;</i></a>
+    <a lay-event="del"><i class="layui-icon" style="font-size:20px">&#xe640;</i></a>
+</script>
+<script type="text/html" id="shopCheck">
+    <!-- 这里的 checked 的状态只是演示 -->
+    <input type="checkbox" id="shop-check" lay-event="shop-check" name="shop-check" value="{{d.shop_id}}"
+           lay-skin="switch"  lay-filter="orderStatus" {{
+           d.shop_check !== 0 ? 'disabled' : '' }} {{ d.shop_check ===1 ? 'checked' : '' }} {{ d.shop_check ===0 ? 'lay-text="已通过|待审核"' : 'lay-text="已通过|未通过"' }} >
+    <input hidden value="" id="shop-check-value">
+</script>
+<script type="text/html" id="checkboxTpl">
+    <!-- 这里的 checked 的状态只是演示 -->
+    <input type="checkbox" width="100" name="lock" lay-skin="primary" value="{{d.shop_id}}" title="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;已审核" lay-filter="lockDemo" {{ d.shop_check !== 0 ? 'checked' : '' }} {{ d.shop_check !== 0 ? 'disabled' : '' }}>
+</script>
+<script>
+    $(function () {
+        var layerHeight = 50;
+        layui.use(['table', 'form'], function () {
+            var table = layui.table,
+                form = layui.form;
+
+            table.render({
+                elem: '#shop',
+                url: '/xgg/ShopFind',
+                method: 'post',
+                parseData: function (res) { //res 即为原始返回的数据
+                    return {
+                        "code": res.success ? 0 : 1, //解析接口状态
+                        "msg": res.msg, //解析提示文本
+                        "count": res.total, //解析数据长度
+                        "data": res.data //解析数据列表
+                    }
+                },
+
+                toolbar: '#toolbar',
+                title: '商家数据表',
+                cols: [[
+                    {type: 'checkbox'},
+                    {field: 'shop_id', title: 'ID', sort: true,hide:true},
+                    {field: 'shop_name', title: '商家名', edit: 'text', align: 'center'},
+                    {field: 'shop_account', title: '账号', sort: true,hide:true},
+                    {field: 'shop_password', title: '密码',hide:true},
+                    {field: 'shop_owner', title: '店主',hide:true},
+                    {field: 'shop_clas_id', title: '分类',hide:true, align: 'center'},
+                    {field: 'shop_phone', title: '手机号', align: 'center'},
+                    {field: 'shop_label', title: '标签', align: 'center'},
+                    {field: 'shop_notice', title: '公告', align: 'center'},
+                    {field: 'shop_level', title: '评分', align: 'center'},
+                    {field: 'shop_check', title: '审核结果', align: 'center',minWidth:90,templet: function (d) {
+                        console.log("shop_check"+d.shop_check);
+                            switch (d.shop_check) {
+                                case 0:
+                                    return "<span style='color: yellow'>待审核</span>";
+                                case 1:
+                                    return "<span style='color: green'>已通过</span>";
+                                case 2:
+                                    return "<span style='color: red'>未通过</span>";
+                            }
+                        }},
+                    {
+                        field: 'shop_head', title: '头像', templet: function (d) {
+
+                            if (d.shop_head == undefined) {
+                                return "";
+                            }
+                            return '<div><img src="' + d.shop_head + '" style:"width:100px; "/></div>'
+                        }
+                        , width: 120, align: 'center' ,hide:true
+                    },
+                    { title: "审核操作",event: 'shop_check', templet: '#shopCheck', align: 'center',minWidth:105},
+                    { title:'是否审核', width:110, templet: '#checkboxTpl', event:'checkboxTp1', align: 'center'},
+
+                    {title: '操作', toolbar: '#bar', width: 80}
+                ]],
+                done:function(){
+                    $('.layui-form-checkbox span').css("color","#000000");
+                },
+                id: 'table_shop',
+                page: true
+            });
+            //监听审核操作
+            form.on('switch(shopCheck)', function (obj) {
+
+                //layer.tips(this.value + ' ' + this.name + '：'+ obj.elem.checked, obj.othis);
+                //$(this).attr("disabled");
+                $(this).attr("disabled", "");
+                $(obj.othis).addClass("layui-checkbox-disbaled layui-disabled");
+
+
+                console.log("监听审核状态:" + this.value);
+
+
+            });
+            //监听锁定操作
+            form.on('checkbox(lockDemo)', function(obj){
+
+                $(obj.elem).attr("disabled","");
+                $(obj.othis).addClass('layui-checkbox-disbaled layui-disabled');
+
+
+
+
+            });
+            form.on('select(findBy)', function (data) {
+                switch (data.value) {
+                    case "shop_id":
+                        $("#findInput").attr('placeholder', "请输入id");
+                        break;
+                    case "shop_name":
+                        $("#findInput").attr('placeholder', "请输入商家名");
+                        break;
+                    case "shop_account":
+                        $("#findInput").attr('placeholder', "请输入账号");
+                        break;
+                }
+            });
+
+            //执行重载
+            form.on('submit(sreach)', function (data) {
+                var findBy = data.field.findBy;
+                var findInput = data.field.findInput;
+                table.reload('table_shop', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    , where: {
+                        condition: function () {
+                            var condition;
+                            switch (findBy) {
+                                case "shop_id":
+
+                                    condition = " and " + findBy + "=" + findInput;
+                                    console.log(condition);
+                                    break;
+                                case "shop_account":
+                                case "shop_name":
+                                    condition = " and " + findBy + " like " + "\'%" + findInput + "%\'";
+                                    console.log(condition);
+                            }
+                            return condition;
+                        }
+                    }
+                });
+                return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+            });
+
+            //监听工具条
+            table.on('tool(shop)', function (obj) { //注：tool是工具条事件名，test是table原始容器的属性 lay-filter="对应的值"
+                var data = obj.data; //获得当前行数据
+                var layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+                var tr = obj.tr; //获得当前行 tr 的DOM对象
+                var shop_id = "shop_id=" + data.shop_id;//获取当前数据行id，用于删除
+
+                layui.sessionData("shop", {key: "data", value: data}); //将当前行数据封装到会话对象中
+                if (layEvent === 'detail') { //查看
+                    //do somehing
+                } else if (layEvent === 'del') { //删除
+                    var newHeight = layerHeight + 50;
+                    layer.open({
+                        content: '真的删除行么？',
+                        offset: newHeight + "px",
+                        yes: function (index, layero) {
+                            //do something
+                            obj.del();
+                            layer.close(index); //如果设定了yes回调，需进行手工关闭
+                            //向服务端发送删除指令
+                            $.ajax({
+                                type: "POST",
+                                url: "/xgg/ShopDelete",
+                                data: {"shop_id": data.shop_id},
+                                success: function (data, status) {		//请求成功后回调
+                                    var msg = JSON.parse(data);
+                                    if (msg.success) {					//删除成功操作
+                                        console.log("删除成功！");
+                                    }
+                                }
+                            });
+                        }
+                    });
+
+                } else if (layEvent === 'edit') { //编辑
+
+                    layer.open({		//打开编辑页面
+                        type: 2,
+                        offset: layerHeight + "px",
+                        area: ['600px', '400px'],
+                        fix: false, //不固定
+
+                        maxmin: true,
+                        shadeClose: false,
+                        shade: 0.4,
+                        title: '编辑',
+                        content: 'shop-edit.html',
+                        end: function () {
+                            var shop = layui.sessionData('shop');	//获取修改后的数据
+                            console.log(JSON.stringify(shop.data));
+
+
+                            //同步更新缓存对应的值
+                            console.log("当前行对应的数据："+JSON.stringify(obj.data));
+                            console.log("同步更新缓存对应的值");
+                            obj.data = shop.data;
+                            console.log("当前行对应的数据："+JSON.stringify(obj.data));
+                            obj.update(shop.data);
+                        }
+                    });
+                }else if(layEvent === 'checkboxTp1'){
+                    //var index = tr.
+                    var status = 0;
+                    if($('td div div em',tr).html() === '待审核' ){
+                        $('td div div em',tr).html("未通过");
+                        status = 2;
+                        obj.update({
+                            shop_check:2
+                        });
+                        $('td div div',tr).addClass('layui-checkbox-disbaled layui-disabled');
+                        $('td div input',tr).attr("disabled","");
+                    }else if($('td div div em',tr).html() === '已通过' ){
+                        status = 1;
+                        obj.update({
+                            shop_check:1
+                        });
+                        $('td div div',tr).addClass('layui-checkbox-disbaled layui-disabled');
+                        $('td div input',tr).attr("disabled","");
+                    }
+                    if(data.shop_check === 0){
+
+                            var paras = {shop_check:status, shop_id: data.shop_id};
+                            paras = "paras=" + JSON.stringify(paras);
+
+
+
+                                //发异步，把数据提交给数据库
+                                $.ajax({
+                                    type: "POST",
+                                    url: "/xgg/ShopUpdate",
+                                    data: paras,
+                                    success: function (data, status) {		//请求成功后回调
+                                        var msg = JSON.parse(data);
+                                        if (msg.success) {					//修改成功操作
+                                            layui.sessionData("shop", {key: "data", value: msg.data[0]}); //将当前行数据封装到会话对象中
+                                            console.log("订单确认成功");
+                                        }
+                                    }
+                                });
+
+
+                    }
+
+
+                }
+
+            });
+
+
+        });
+
+
+        $(document).scroll(function () { //页面加载时，获取滚动条初始高度
+            layerHeight = $(document).scrollTop() + 50; //获取滚动条初始高度的值 ：0
+        });
+
+
+    });
+</script>
+</body>
+
+</html>

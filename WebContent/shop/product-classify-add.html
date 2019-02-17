@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>商品分类添加</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="shortcut icon" href="/xgg/favicon.ico" type="image/x-icon"/>
+    <link rel="stylesheet" href="./css/font.css">
+    <link rel="stylesheet" href="./css/xadmin.css">
+    <script type="text/javascript" src="./lib/jquery/jquery-3.3.1.js"></script>
+    <script type="text/javascript" src="./lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="./js/xadmin.js"></script>
+    <script type="text/javascript" src="./js/xcity.js"></script>
+
+    <script src="./lib/qiniu/moxie.js"></script>
+    <script src="./lib/qiniu/plupload.min.js"></script>
+    <script src="./lib/qiniu/qiniu.js"></script>
+    <!-- <script src="./lib/qiniu/plupload.full.min.js"></script> -->
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+<div class="x-body">
+    <form class="layui-form" lay-filter="product">
+
+
+        <div class="layui-form-item">
+            <label for="pc_name" class="layui-form-label">
+                <span class="x-red">*</span>商品分类名
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="pc_name" name="pc_name" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label for="pc_sort_show" class="layui-form-label">
+                <span class="x-red">*</span>排序
+            </label>
+            <div class="layui-input-inline">
+                <input type="number" id="pc_sort_show" name="pc_sort_show" autocomplete="off" class="layui-input" disabled min="1" style="background: #e6e6e6">
+                <!--<select name="pc_sort" id="pc_sort" lay-verify="" lay-search>
+                    <option value="010">layer</option>
+                    <option value="021">form</option>
+                    <option value="0571" selected>layim</option>
+                    ……
+                </select>-->
+            </div>
+            <!--排序备注-->
+            <div class="layui-form-mid layui-word-aux" id="pc_sort_note"></div>
+        </div>
+        <div class="layui-form-item">
+            <label for="productRegist" class="layui-form-label">
+            </label>
+            <button id="productRegist" class="layui-btn" lay-filter="add" lay-submit="">
+                增加
+            </button>
+        </div>
+    </form>
+</div>
+<script>
+    $(function () {
+        var shop = layui.sessionData("shop").data;    //商家信息
+        var productClassifyData;    //全局商品数据
+        var loadIndex;       //加载，用于开始和关闭加载动画
+        $("#pc_sort_show").val(layui.sessionData('productClassifyTotal').data+1);
+
+        layui.use(['form', 'layer', 'laydate'], function () {
+            form = layui.form;
+            var layer = layui.layer;
+           
+
+           
+            //监听提交
+            form.on('submit(add)', function (data) {
+
+                loadIndex = layer.load();   //显示加载中
+                imgKey = $("#prod_head").val();
+                console.log("keyOld: " + imgKey);
+                productClassifyData = data.field; //全局用于数据赋值
+
+                if ($("#isUpload").val() == "true") {  //如果有已选择图片文件，则上传key更新头像
+                    uploader.start();     //开始上传图片到七牛云
+                } else {
+                    productClassifyAdd(productClassifyData);
+                }
+                return false;              //取消表单跳转
+            });
+
+            //提交数据到后台，更新数据
+            function productClassifyAdd(productClassifyData) {
+
+                var productClassify = productClassifyData;
+                productClassify.pc_shop_id = shop.shop_id;
+               
+               
+                
+
+                console.log("剔除前：" + JSON.stringify(productClassify));
+                //去除data中的空属性即""
+                for (prop in productClassify) {
+                    if (productClassify[prop] === '') {
+                        delete productClassify[prop];
+                    }
+                }
+                console.log("剔除后：" + JSON.stringify(productClassify));
+
+               
+                var paras = "paras=" + JSON.stringify(productClassify);
+                console.log("paras: " + paras);
+                paras = paras.replace(new RegExp("\"\"", 'g'), "");
+
+                console.log("after replace:" + paras);
+                //发异步，把数据提交给数据库
+                $.ajax({
+                    type: "POST",
+                    url: "/xgg/ProductClassifyAdd",
+                    data: paras,
+                    success: function (data, status) {		//请求成功后回调
+                        console.log("新增商品分类请求成功！");
+                        var msg = JSON.parse(data);
+                        if (msg.success) {					//添加成功操作
+                            console.log("新增商品分类成功！");
+                            layui.sessionData("productClassifyAdd", {key: "data", value: msg.data[0]}); //将当前行数据封装到会话对象中
+                            layer.close(loadIndex);
+                            var index = parent.layer.getFrameIndex(window.name);
+                            parent.layer.close(index);
+
+                        }
+                    }
+                });
+
+            }
+
+
+        });
+
+
+    });
+
+</script>
+
+</body>
+
+</html>
